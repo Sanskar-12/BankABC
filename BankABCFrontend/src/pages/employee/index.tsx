@@ -5,14 +5,14 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { DollarSign, User, CreditCard, Banknote } from "lucide-react";
+// import { Button } from "@/components/ui/button";
+// import { Badge } from "@/components/ui/badge";
+import { User, CreditCard, Banknote } from "lucide-react";
 
-import { useNavigate } from "react-router-dom";
+// import { useNavigate } from "react-router-dom";
 
 export default function Dashboard() {
-    const navigate = useNavigate();
+    // const navigate = useNavigate();
 
     // Mock account information
     const accountInfo = {
@@ -33,7 +33,7 @@ export default function Dashboard() {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid gap-4 grid-cols-2">
+            {/* <div className="grid gap-4 grid-cols-2">
                 <Card className="border-blue-200">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium text-gray-700">
@@ -47,7 +47,7 @@ export default function Dashboard() {
                         </div>
                     </CardContent>
                 </Card>
-            </div>
+            </div> */}
 
             {/* Account Info Section */}
             <Card className="border-blue-200">
@@ -107,8 +107,9 @@ export default function Dashboard() {
                 </CardContent>
             </Card>
 
+            {/* Make changes according to the need of the employee dashboard */}
             {/* Recent Transactions */}
-            <Card className="border-blue-200">
+            {/* <Card className="border-blue-200">
                 <CardHeader>
                     <CardTitle className="text-gray-900">
                         Recent Transactions
@@ -190,7 +191,7 @@ export default function Dashboard() {
                         </Button>
                     </div>
                 </CardContent>
-            </Card>
+            </Card> */}
         </div>
     );
 }

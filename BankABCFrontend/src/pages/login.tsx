@@ -31,11 +31,11 @@ export default function LoginForm({
         email: "",
         password: "",
     });
-    const {login}=useAuth()
+    const { login } = useAuth();
     const [isLogin, setIsLogin] = useState(false);
 
     const { user } = useAuth();
-    console.log(user)
+    console.log(user);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -43,7 +43,7 @@ export default function LoginForm({
     };
 
     // A single submission handler
-    const handleSubmit =async (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         // In a real app, you would now make an API call with the role and credentials
         console.log({
@@ -52,16 +52,16 @@ export default function LoginForm({
             password: credentials.password,
         });
 
-        const loginData={
+        const loginData = {
             username: credentials.email,
             password: credentials.password,
-        }
+        };
         const result = await login(loginData);
         if (result.success) {
-          toast.success(`Signed In successfully!`);
-          setIsLogin(true);
+            toast.success(`Signed In successfully!`);
+            setIsLogin(true);
         } else {
-          toast.error(result.error || 'Signin failed. Please try again.');
+            toast.error(result.error || "Signin failed. Please try again.");
         }
     };
 
@@ -154,7 +154,8 @@ export default function LoginForm({
                         <CardFooter className="self-center">
                             <Link to="/signup">
                                 <div className="text-muted-foreground text-center text-xs text-balance">
-                                    Don't have an account? <strong>Sign up</strong>
+                                    Don't have an account?{" "}
+                                    <strong>Sign up</strong>
                                 </div>
                             </Link>
                         </CardFooter>
