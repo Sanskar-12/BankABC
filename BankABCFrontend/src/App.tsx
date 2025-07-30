@@ -20,10 +20,16 @@ import Loans from "@/pages/employee/loans";
 import ViewTransactions from "@/pages/employee/view-transactions";
 import ViewAccount from "@/pages/employee/view-account";
 
+import AdminDashboard from "@/pages/admin";
+import EmployeeManagement from "@/pages/admin/manage-employees";
+import BranchManagement from "@/pages/admin/manage-branches";
+
 import CustomerLayout from "@/layouts/customer";
 import EmployeeLayout from "@/layouts/employee";
+import AdminLayout from "@/layouts/admin";
 
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import ManageCustomers from "./pages/admin/manage-customer";
 
 // ✅ Protected Route (for authenticated pages)
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -123,6 +129,16 @@ const AppRoutes = () => {
                 />
                 <Route path="view-account" element={<ViewAccount />} />
                 {/* <Route /> */}
+            </Route>
+
+            <Route path="/admin" element={<AdminLayout />}>
+                <Route index element={<AdminDashboard />} />
+                <Route
+                    path="manage-employees"
+                    element={<EmployeeManagement />}
+                />
+                <Route path="manage-branches" element={<BranchManagement />} />
+                <Route path="manage-customers" element={<ManageCustomers />} />
             </Route>
         </Routes>
     );
