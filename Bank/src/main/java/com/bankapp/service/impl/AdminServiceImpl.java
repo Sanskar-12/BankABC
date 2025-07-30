@@ -1,6 +1,8 @@
 package com.bankapp.service.impl;
 
 import com.bankapp.dto.branch.BranchDto;
+import com.bankapp.dto.customer.CustomerDto;
+import com.bankapp.dto.dashboard.DashboardStatsDto;
 import com.bankapp.dto.employee.EmployeeCreateDto;
 import com.bankapp.dto.employee.EmployeeDto;
 import com.bankapp.dto.employee.EmployeeUpdateDto;
@@ -22,12 +24,28 @@ import java.util.stream.Collectors;
 @Service
 public class AdminServiceImpl implements AdminService {
 
+
     @Autowired private EmployeeRepository employeeRepository;
     @Autowired private BranchRepository branchRepository;
     @Autowired private UserRepository userRepository;
     @Autowired private RoleRepository roleRepository;
     @Autowired private PasswordEncoder encoder;
     @Autowired private CustomerRepository customerRepository;
+    @Override
+    public DashboardStatsDto getDashboardStats() {
+        long totalCustomers = customerRepository.count();
+        long activeCustomers = customerRepository.countCustomersByAccountStatus("ACTIVE");
+        long totalBranches = branchRepository.count();
+        long totalEmployees = employeeRepository.count();
+        return new DashboardStatsDto(totalCustomers, activeCustomers, totalBranches, totalEmployees);
+    }
+
+    @Override
+    public List<BranchDto> getAllBranches() {
+        return branchRepository.findAll().stream()
+                .map(this::convertToBranchDto)
+                .collect(Collectors.toList());
+    }
 
     @Override
     @Transactional
@@ -130,11 +148,29 @@ public class AdminServiceImpl implements AdminService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<CustomerDto> getAllCustomers() {
+        return customerRepository.findAll().stream()
+                .map(this::convertToCustomerDto)
+                .collect(Collectors.toList());
+    }
+
+
     private BranchDto convertToBranchDto(BranchEntity branch) {
         BranchDto dto = new BranchDto();
         BeanUtils.copyProperties(branch, dto);
         return dto;
     }
+
+    private CustomerDto convertToCustomerDto(CustomerEntity customer) {
+        CustomerDto dto = new CustomerDto();
+        BeanUtils.copyProperties(customer, dto);
+//        if (customer.getBranch() != null) {
+//            dto.setBranchId(customer.getBranch().getBranchId());
+//        }
+        return dto;
+    }
+
 
     private EmployeeDto convertToEmployeeDto(EmployeeEntity employee) {
         EmployeeDto dto = new EmployeeDto();
