@@ -96,6 +96,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     const login = async (credentials: any) => {
         try {
+            console.log(credentials);
             const response = await axios.post(
                 "http://localhost:8080/api/auth/login",
                 credentials,

@@ -31,6 +31,15 @@ import {
     DollarSign,
     CreditCard,
 } from "lucide-react";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import axios from "axios";
+import { useAuth } from "@/context/AuthContext";
 
 // Validation schemas
 const depositSchema = z.object({
@@ -38,6 +47,7 @@ const depositSchema = z.object({
         .string()
         .min(1, "Account ID is required")
         .regex(/^\d+$/, "Account ID must be a number"),
+
     amount: z
         .string()
         .min(1, "Amount is required")
@@ -48,7 +58,8 @@ const depositSchema = z.object({
         .refine((val) => Number.parseFloat(val) <= 50000, {
             message: "Maximum deposit amount is $50,000.",
         }),
-    type: z.literal("DEPOSIT"), // Hardcoded type
+
+    type: z.enum(["DEPOSIT", "LOAN_REPAYMENT"]),
 });
 
 const withdrawSchema = z.object({
@@ -78,6 +89,8 @@ export default function Transactions() {
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [transactionResult, setTransactionResult] = useState<any>(null);
 
+    const { getCookie } = useAuth();
+
     const depositForm = useForm<DepositFormData>({
         resolver: zodResolver(depositSchema),
         defaultValues: {
@@ -105,15 +118,27 @@ export default function Transactions() {
             type: "DEPOSIT", // Hardcoded for payload
         };
 
+        const { data } = await axios.post(
+            "http://localhost:8080/api/user/accounts/deposit",
+            payload,
+            {
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${getCookie("auth_token")}`,
+                },
+            },
+        );
+
         // Simulate API call
         await new Promise((resolve) => setTimeout(resolve, 1500));
 
         console.log("Deposit Payload:", payload);
+        console.log(data);
 
         setTransactionResult({
             ...payload,
-            type: "DEPOSIT",
-            transactionId: `DEP${Math.floor(Math.random() * 1000000)}`,
+            type: payload.type,
+            transactionId: data.transId,
         });
 
         setIsSubmitting(false);
@@ -135,6 +160,17 @@ export default function Transactions() {
             type: "WITHDRAWAL", // Hardcoded for payload
         };
 
+        const { data } = await axios.post(
+            "http://localhost:8080/api/user/accounts/withdraw",
+            payload,
+            {
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${getCookie("auth_token")}`,
+                },
+            },
+        );
+
         // Simulate API call
         await new Promise((resolve) => setTimeout(resolve, 1500));
 
@@ -142,8 +178,8 @@ export default function Transactions() {
 
         setTransactionResult({
             ...payload,
-            type: "withdraw",
-            transactionId: `WTH${Math.floor(Math.random() * 1000000)}`,
+            type: payload.type,
+            transactionId: data.transId,
         });
 
         setIsSubmitting(false);
@@ -354,6 +390,44 @@ export default function Transactions() {
                                                                 Maximum: $50,000
                                                                 per transaction
                                                             </FormDescription>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+
+                                                <FormField
+                                                    control={
+                                                        depositForm.control
+                                                    }
+                                                    name="type"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel>
+                                                                Deposit Type
+                                                            </FormLabel>
+                                                            <FormControl>
+                                                                <Select
+                                                                    onValueChange={
+                                                                        field.onChange
+                                                                    }
+                                                                    defaultValue={
+                                                                        field.value
+                                                                    }
+                                                                >
+                                                                    <SelectTrigger>
+                                                                        <SelectValue placeholder="Select type" />
+                                                                    </SelectTrigger>
+                                                                    <SelectContent>
+                                                                        <SelectItem value="DEPOSIT">
+                                                                            Deposit
+                                                                        </SelectItem>
+                                                                        <SelectItem value="LOAN_REPAYMENT">
+                                                                            Loan
+                                                                            Repayment
+                                                                        </SelectItem>
+                                                                    </SelectContent>
+                                                                </Select>
+                                                            </FormControl>
                                                             <FormMessage />
                                                         </FormItem>
                                                     )}

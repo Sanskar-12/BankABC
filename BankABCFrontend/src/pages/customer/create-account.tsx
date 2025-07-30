@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -29,6 +29,8 @@ import {
     FormMessage,
 } from "@/components/ui/form";
 import { Loader2, CheckCircle } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import axios from "axios";
 
 // Validation schema
 const formSchema = z.object({
@@ -36,10 +38,10 @@ const formSchema = z.object({
         .string()
         .min(1, "Customer ID is required")
         .regex(/^\d+$/, "Customer ID must be a number"),
-    branchId: z
+    branchName: z
         .string()
-        .min(1, "Branch ID is required")
-        .regex(/^\d+$/, "Branch ID must be a number"),
+        .min(1, "Branch Name is required")
+        .max(255, "Branch Name too long"),
     accountName: z
         .string()
         .min(3, { message: "Account name must be at least 3 characters." }),
@@ -58,31 +60,53 @@ type FormData = z.infer<typeof formSchema>;
 export default function CreateAccount() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSubmitted, setIsSubmitted] = useState(false);
+    const [userId, setUserId] = useState("");
+
+    const { getCookie } = useAuth();
 
     const form = useForm<FormData>({
         resolver: zodResolver(formSchema),
         defaultValues: {
             customerId: "",
-            branchId: "",
+            branchName: "",
             accountName: "",
             accountType: "",
             initialDeposit: "",
         },
     });
 
+    useEffect(() => {
+        const rawUser = getCookie("user_data");
+
+        try {
+            const user = JSON.parse(rawUser);
+            if (user?.id) {
+                setUserId(String(user.id));
+                form.setValue("customerId", String(user.id));
+            }
+        } catch (error) {
+            console.error("Invalid user_data in cookie", error);
+        }
+    }, []);
+
     async function onSubmit(values: FormData) {
         setIsSubmitting(true);
 
-        // Transform string values to numbers for API payload
         const payload = {
             customerId: Number.parseInt(values.customerId),
-            branchId: Number.parseInt(values.branchId),
+            branchName: values.branchName,
             accountName: values.accountName,
-            accountType: values.accountType as "SAVINGS" | "CURRENT",
+            accountType: values.accountType as "SAVINGS" | "CHECKING",
             initialDeposit: Number.parseFloat(values.initialDeposit),
         };
 
-        // Simulate API call
+        await axios.post("http://localhost:8080/api/user/accounts", payload, {
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${getCookie("auth_token")}`,
+            },
+        });
+
         await new Promise((resolve) => setTimeout(resolve, 1500));
 
         console.log("Payload:", payload);
@@ -93,6 +117,7 @@ export default function CreateAccount() {
         setTimeout(() => {
             setIsSubmitted(false);
             form.reset();
+            form.setValue("customerId", userId);
         }, 3000);
     }
 
@@ -114,7 +139,6 @@ export default function CreateAccount() {
 
     return (
         <div className="space-y-6">
-            {/* Page Header */}
             <div>
                 <h1 className="text-3xl font-bold text-gray-900">
                     Create Account
@@ -139,7 +163,6 @@ export default function CreateAccount() {
                             onSubmit={form.handleSubmit(onSubmit)}
                             className="space-y-4"
                         >
-                            {/* Customer ID */}
                             <FormField
                                 control={form.control}
                                 name="customerId"
@@ -147,26 +170,22 @@ export default function CreateAccount() {
                                     <FormItem>
                                         <FormLabel>Customer ID</FormLabel>
                                         <FormControl>
-                                            <Input
-                                                placeholder="Enter Customer ID (e.g., 12345)"
-                                                {...field}
-                                            />
+                                            <Input {...field} readOnly />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )}
                             />
 
-                            {/* Branch ID */}
                             <FormField
                                 control={form.control}
-                                name="branchId"
+                                name="branchName"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Branch ID</FormLabel>
+                                        <FormLabel>Branch Name</FormLabel>
                                         <FormControl>
                                             <Input
-                                                placeholder="Enter Branch ID (e.g., 001)"
+                                                placeholder="Enter Branch Name"
                                                 {...field}
                                             />
                                         </FormControl>
@@ -175,7 +194,6 @@ export default function CreateAccount() {
                                 )}
                             />
 
-                            {/* Account Name */}
                             <FormField
                                 control={form.control}
                                 name="accountName"
@@ -193,7 +211,6 @@ export default function CreateAccount() {
                                 )}
                             />
 
-                            {/* Account Type */}
                             <FormField
                                 control={form.control}
                                 name="accountType"
@@ -213,8 +230,8 @@ export default function CreateAccount() {
                                                 <SelectItem value="SAVINGS">
                                                     Savings Account
                                                 </SelectItem>
-                                                <SelectItem value="CURRENT">
-                                                    Current Account
+                                                <SelectItem value="CHECKING">
+                                                    Checking Account
                                                 </SelectItem>
                                             </SelectContent>
                                         </Select>
@@ -223,7 +240,6 @@ export default function CreateAccount() {
                                 )}
                             />
 
-                            {/* Initial Deposit */}
                             <FormField
                                 control={form.control}
                                 name="initialDeposit"
@@ -246,7 +262,6 @@ export default function CreateAccount() {
                                 )}
                             />
 
-                            {/* Submit Button */}
                             <Button
                                 type="submit"
                                 className="w-full bg-blue-600 hover:bg-blue-700 text-white"
