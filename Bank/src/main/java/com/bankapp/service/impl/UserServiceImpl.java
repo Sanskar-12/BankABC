@@ -40,8 +40,9 @@ public class UserServiceImpl implements UserService {
         CustomerEntity customer = customerRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Customer profile not found for user."));
 
-        BranchEntity branch = branchRepository.findById(accountCreateDto.getBranchId())
-                .orElseThrow(() -> new ResourceNotFoundException("Branch with ID " + accountCreateDto.getBranchId() + " not found."));
+        BranchEntity branch = branchRepository.findByBranchName(accountCreateDto.getBranchName())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Branch with name " + accountCreateDto.getBranchName() + " not found."));
 
         AccountEntity account = new AccountEntity();
         account.setCustomer(customer);
@@ -55,14 +56,16 @@ public class UserServiceImpl implements UserService {
         return convertToAccountDto(savedAccount);
     }
 
+
     @Override
     @Transactional
     public AccountDto deposit(TransactionRequestDto request) {
         AccountEntity account = findAccountById(request.getAccountId());
         checkAccountStatus(account);
 
+        TransactionEntity transaction;
+
         if ("LOAN_REPAYMENT".equalsIgnoreCase(request.getType())) {
-            // Logic for loan repayment
             LoanEntity activeLoan = loanRepository.findFirstByAccountCustomerAndLoanStatus(account.getCustomer(), "APPROVED")
                     .orElseThrow(() -> new ResourceNotFoundException("No active loan found for this customer."));
 
@@ -75,17 +78,28 @@ public class UserServiceImpl implements UserService {
             } else {
                 activeLoan.setLoanAmount(remainingLoan.subtract(paymentAmount));
             }
+
             loanRepository.save(activeLoan);
-            createTransaction(account, paymentAmount, "LOAN_REPAYMENT", "Loan repayment for loan ID: " + activeLoan.getLoanId());
+
+            transaction = createTransaction(
+                    account,
+                    paymentAmount,
+                    "LOAN_REPAYMENT",
+                    "Loan repayment for loan ID: " + activeLoan.getLoanId()
+            );
         } else {
-            // Logic for regular deposit
             account.setBalance(account.getBalance().add(request.getAmount()));
-            createTransaction(account, request.getAmount(), "DEPOSIT", "Customer deposit");
+            transaction = createTransaction(account, request.getAmount(), "DEPOSIT", "Customer deposit");
         }
 
         AccountEntity savedAccount = accountRepository.save(account);
-        return convertToAccountDto(savedAccount);
+        AccountDto dto = convertToAccountDto(savedAccount);
+
+        dto.setTransId(transaction.getTransId()); // ✅ Setting the transaction ID in DTO
+
+        return dto;
     }
+
 
     @Override
     @Transactional
@@ -98,11 +112,20 @@ public class UserServiceImpl implements UserService {
         }
 
         account.setBalance(account.getBalance().subtract(request.getAmount()));
-        createTransaction(account, request.getAmount(), "WITHDRAWAL", "Customer withdrawal");
+
+        TransactionEntity transaction = createTransaction(
+                account,
+                request.getAmount(),
+                "WITHDRAWAL",
+                "Customer withdrawal"
+        );
 
         AccountEntity savedAccount = accountRepository.save(account);
-        return convertToAccountDto(savedAccount);
+        AccountDto dto = convertToAccountDto(savedAccount);
+        dto.setTransId(transaction.getTransId()); // ✅ Set transaction ID in the response
+        return dto;
     }
+
 
     @Override
     @Transactional
@@ -167,7 +190,7 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-    private void createTransaction(AccountEntity account, BigDecimal amount, String type, String description) {
+    private TransactionEntity  createTransaction(AccountEntity account, BigDecimal amount, String type, String description) {
         TransactionEntity transaction = new TransactionEntity();
         transaction.setAccount(account);
         transaction.setAmount(amount);
@@ -175,6 +198,7 @@ public class UserServiceImpl implements UserService {
         transaction.setTimestamp(LocalDateTime.now());
         transaction.setDescription(description);
         transactionRepository.save(transaction);
+        return transaction;
     }
 
     private AccountDto convertToAccountDto(AccountEntity account) {

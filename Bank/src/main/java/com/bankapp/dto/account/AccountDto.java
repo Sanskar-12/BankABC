@@ -12,4 +12,8 @@ public class AccountDto {
     private String accType;
     private BigDecimal balance;
     private String status;
+    private Long transId;
+
+    public void setTransactionId(Integer transactionId) {
+    }
 }

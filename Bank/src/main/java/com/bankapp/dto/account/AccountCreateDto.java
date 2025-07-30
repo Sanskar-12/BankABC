@@ -11,8 +11,8 @@ public class AccountCreateDto {
     @NotNull(message = "Customer ID cannot be null")
     private Integer customerId;
 
-    @NotNull(message = "Branch ID cannot be null")
-    private Integer branchId;
+    @NotNull(message = "Branch Name cannot be null")
+    private String branchName;
 
     @NotBlank(message = "Account name cannot be blank")
     private String accountName;

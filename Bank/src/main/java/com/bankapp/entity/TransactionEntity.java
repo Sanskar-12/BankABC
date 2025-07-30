@@ -22,4 +22,6 @@ public class TransactionEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "acc_id", nullable = false)
     private AccountEntity account;
+
+
 }

@@ -39,6 +39,8 @@ import {
     GraduationCap,
     Building,
 } from "lucide-react";
+import axios from "axios";
+import { useAuth } from "@/context/AuthContext";
 
 // Validation schema
 const formSchema = z.object({
@@ -65,6 +67,7 @@ export default function ApplyForLoan() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [selectedLoanType, setSelectedLoanType] = useState<string>("");
+    const {getCookie}=useAuth()
 
     const form = useForm<FormData>({
         resolver: zodResolver(formSchema),
@@ -133,6 +136,13 @@ export default function ApplyForLoan() {
             loanType: values.loanType,
             loanAmount: Number.parseFloat(values.loanAmount),
         };
+
+          await axios.post("http://localhost:8080/api/user/loans/apply", payload, {
+      headers: {
+        "Content-Type": "application/json",
+         Authorization: `Bearer ${getCookie("auth_token")}`,
+      },
+    });
 
         // Simulate API call
         await new Promise((resolve) => setTimeout(resolve, 2000));

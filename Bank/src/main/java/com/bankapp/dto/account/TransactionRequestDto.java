@@ -18,6 +18,6 @@ public class TransactionRequestDto {
     private BigDecimal amount;
 
     // Type for deposits: DEPOSIT or LOAN_REPAYMENT
-    @Pattern(regexp = "DEPOSIT|LOAN_REPAYMENT", message = "Type must be DEPOSIT or LOAN_REPAYMENT")
+    @Pattern(regexp = "DEPOSIT|LOAN_REPAYMENT|WITHDRAWAL", message = "Type must be DEPOSIT or LOAN_REPAYMENT")
     private String type;
 }
