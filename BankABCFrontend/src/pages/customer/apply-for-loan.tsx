@@ -67,6 +67,7 @@ export default function ApplyForLoan() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [selectedLoanType, setSelectedLoanType] = useState<string>("");
+    const [loanId, setLoanId] = useState("");
     const { getCookie } = useAuth();
 
     const form = useForm<FormData>({
@@ -137,7 +138,7 @@ export default function ApplyForLoan() {
             loanAmount: Number.parseFloat(values.loanAmount),
         };
 
-        await axios.post(
+        const { data } = await axios.post(
             "http://localhost:8080/api/user/loans/apply",
             payload,
             {
@@ -148,6 +149,9 @@ export default function ApplyForLoan() {
             },
         );
 
+        setLoanId(data.loanId);
+
+        console.log(data);
         // Simulate API call
         await new Promise((resolve) => setTimeout(resolve, 2000));
 
@@ -178,8 +182,8 @@ export default function ApplyForLoan() {
                     </p>
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-md mx-auto">
                         <p className="text-sm text-blue-800">
-                            <strong>Application ID:</strong> LA
-                            {Math.floor(Math.random() * 100000)}
+                            <strong>Application ID:</strong>
+                            {loanId}
                         </p>
                         <p className="text-sm text-blue-800 mt-1">
                             Please save this ID for future reference.

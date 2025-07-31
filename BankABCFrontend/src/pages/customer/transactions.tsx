@@ -41,24 +41,22 @@ import {
 import axios from "axios";
 import { useAuth } from "@/context/AuthContext";
 
-// Validation schemas
+// SCHEMAS
 const depositSchema = z.object({
     accountId: z
         .string()
         .min(1, "Account ID is required")
         .regex(/^\d+$/, "Account ID must be a number"),
-
     amount: z
         .string()
         .min(1, "Amount is required")
-        .regex(/^\d+(\.\d{1,2})?$/, "Please enter a valid amount")
+        .regex(/^\d+(\.\d{1,2})?$/, "Enter valid amount")
         .refine((val) => Number.parseFloat(val) > 0, {
-            message: "Amount must be greater than 0.",
+            message: "Amount must be greater than 0",
         })
         .refine((val) => Number.parseFloat(val) <= 50000, {
-            message: "Maximum deposit amount is $50,000.",
+            message: "Max is $50,000",
         }),
-
     type: z.enum(["DEPOSIT", "LOAN_REPAYMENT"]),
 });
 
@@ -70,14 +68,14 @@ const withdrawSchema = z.object({
     amount: z
         .string()
         .min(1, "Amount is required")
-        .regex(/^\d+(\.\d{1,2})?$/, "Please enter a valid amount")
+        .regex(/^\d+(\.\d{1,2})?$/, "Enter valid amount")
         .refine((val) => Number.parseFloat(val) > 0, {
-            message: "Amount must be greater than 0.",
+            message: "Amount must be greater than 0",
         })
         .refine((val) => Number.parseFloat(val) <= 10000, {
-            message: "Maximum withdrawal amount is $10,000 per transaction.",
+            message: "Max is $10,000",
         }),
-    type: z.literal("WITHDRAWAL"), // Hardcoded type
+    type: z.literal("WITHDRAWAL"),
 });
 
 type DepositFormData = z.infer<typeof depositSchema>;
@@ -93,29 +91,33 @@ export default function Transactions() {
 
     const depositForm = useForm<DepositFormData>({
         resolver: zodResolver(depositSchema),
-        defaultValues: {
-            accountId: "",
-            amount: "",
-            type: "DEPOSIT", // Default to DEPOSIT
-        },
+        defaultValues: { accountId: "", amount: "", type: "DEPOSIT" },
     });
 
     const withdrawForm = useForm<WithdrawFormData>({
         resolver: zodResolver(withdrawSchema),
-        defaultValues: {
-            accountId: "",
-            amount: "",
-            type: "WITHDRAWAL", // Default to WITHDRAWAL
-        },
+        defaultValues: { accountId: "", amount: "", type: "WITHDRAWAL" },
     });
 
-    async function onDepositSubmit(values: Omit<DepositFormData, "type">) {
-        setIsSubmitting(true);
+    const handleTransactionResult = (payload: any, transId: number) => {
+        setTransactionResult({ ...payload, transactionId: transId });
+        setIsSubmitting(false);
+        setIsSubmitted(true);
 
+        setTimeout(() => {
+            setIsSubmitted(false);
+            setTransactionResult(null);
+            depositForm.reset();
+            withdrawForm.reset();
+        }, 4000);
+    };
+
+    const onDepositSubmit = async (values: Omit<DepositFormData, "type">) => {
+        setIsSubmitting(true);
         const payload = {
-            accountId: Number.parseInt(values.accountId),
-            amount: Number.parseFloat(values.amount),
-            type: "DEPOSIT", // Hardcoded for payload
+            accountId: Number(values.accountId),
+            amount: Number(values.amount),
+            type: "DEPOSIT",
         };
 
         const { data } = await axios.post(
@@ -129,35 +131,15 @@ export default function Transactions() {
             },
         );
 
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1500));
+        handleTransactionResult(payload, data.transId);
+    };
 
-        console.log("Deposit Payload:", payload);
-        console.log(data);
-
-        setTransactionResult({
-            ...payload,
-            type: payload.type,
-            transactionId: data.transId,
-        });
-
-        setIsSubmitting(false);
-        setIsSubmitted(true);
-
-        setTimeout(() => {
-            setIsSubmitted(false);
-            setTransactionResult(null);
-            depositForm.reset();
-        }, 4000);
-    }
-
-    async function onWithdrawSubmit(values: Omit<WithdrawFormData, "type">) {
+    const onWithdrawSubmit = async (values: Omit<WithdrawFormData, "type">) => {
         setIsSubmitting(true);
-
         const payload = {
-            accountId: Number.parseInt(values.accountId),
-            amount: Number.parseFloat(values.amount),
-            type: "WITHDRAWAL", // Hardcoded for payload
+            accountId: Number(values.accountId),
+            amount: Number(values.amount),
+            type: "WITHDRAWAL",
         };
 
         const { data } = await axios.post(
@@ -171,45 +153,30 @@ export default function Transactions() {
             },
         );
 
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-
-        console.log("Withdraw Payload:", payload);
-
-        setTransactionResult({
-            ...payload,
-            type: payload.type,
-            transactionId: data.transId,
-        });
-
-        setIsSubmitting(false);
-        setIsSubmitted(true);
-
-        setTimeout(() => {
-            setIsSubmitted(false);
-            setTransactionResult(null);
-            withdrawForm.reset();
-        }, 4000);
-    }
+        handleTransactionResult(payload, data.transId);
+    };
 
     if (isSubmitted && transactionResult) {
-        const isDeposit = transactionResult.type === "deposit";
+        const isCredit = transactionResult.type === "DEPOSIT";
+        const sign = isCredit ? "+" : "-";
+        const amountColor = isCredit ? "text-green-600" : "text-red-600";
+
         return (
             <div className="space-y-6">
                 <div className="text-center py-12">
                     <CheckCircle className="mx-auto h-16 w-16 text-green-600 mb-4" />
                     <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                        {isDeposit ? "Deposit" : "Withdrawal"} Successful!
+                        {isCredit ? "Deposit" : "Withdrawal"} Successful!
                     </h1>
                     <p className="text-gray-600 mb-6">
-                        Your {isDeposit ? "deposit" : "withdrawal"} transaction
-                        has been processed successfully.
+                        Your {isCredit ? "deposit" : "withdrawal"} has been
+                        processed.
                     </p>
 
                     <Card className="max-w-md mx-auto border-blue-200">
                         <CardHeader className="bg-blue-50">
                             <CardTitle className="text-gray-900 flex items-center gap-2">
-                                {isDeposit ? (
+                                {isCredit ? (
                                     <ArrowDownCircle className="h-5 w-5 text-green-600" />
                                 ) : (
                                     <ArrowUpCircle className="h-5 w-5 text-red-600" />
@@ -217,47 +184,43 @@ export default function Transactions() {
                                 Transaction Receipt
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="pt-6">
-                            <div className="space-y-3 text-sm">
-                                <div className="flex justify-between">
-                                    <span className="text-gray-600">
-                                        Transaction ID:
-                                    </span>
-                                    <span className="font-medium">
-                                        {transactionResult.transactionId}
-                                    </span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-gray-600">
-                                        Account ID:
-                                    </span>
-                                    <span className="font-medium">
-                                        {transactionResult.accountId}
-                                    </span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-gray-600">Type:</span>
-                                    <span className="font-medium">
-                                        {transactionResult.type}
-                                    </span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-gray-600">
-                                        Amount:
-                                    </span>
-                                    <span
-                                        className={`font-bold text-lg ${isDeposit ? "text-green-600" : "text-red-600"}`}
-                                    >
-                                        {isDeposit ? "+" : "-"}$
-                                        {transactionResult.amount.toLocaleString()}
-                                    </span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-gray-600">Date:</span>
-                                    <span className="font-medium">
-                                        {new Date().toLocaleString()}
-                                    </span>
-                                </div>
+                        <CardContent className="pt-6 space-y-3 text-sm">
+                            <div className="flex justify-between">
+                                <span className="text-gray-600">
+                                    Transaction ID:
+                                </span>
+                                <span className="font-medium">
+                                    {transactionResult.transactionId}
+                                </span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-gray-600">
+                                    Account ID:
+                                </span>
+                                <span className="font-medium">
+                                    {transactionResult.accountId}
+                                </span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-gray-600">Type:</span>
+                                <span className="font-medium">
+                                    {transactionResult.type}
+                                </span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-gray-600">Amount:</span>
+                                <span
+                                    className={`font-bold text-lg ${amountColor}`}
+                                >
+                                    {sign}$
+                                    {transactionResult.amount.toLocaleString()}
+                                </span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-gray-600">Date:</span>
+                                <span className="font-medium">
+                                    {new Date().toLocaleString()}
+                                </span>
                             </div>
                         </CardContent>
                     </Card>
@@ -268,23 +231,18 @@ export default function Transactions() {
 
     return (
         <div className="space-y-6">
-            {/* Page Header */}
             <div>
                 <h1 className="text-3xl font-bold text-gray-900">
                     Transactions
                 </h1>
-                <p className="text-gray-600 mt-1">
-                    Deposit money to your account or make withdrawals.
-                </p>
+                <p className="text-gray-600 mt-1">Deposit or withdraw money.</p>
             </div>
 
             <Card className="border-blue-200 max-w-4xl mx-auto">
                 <CardHeader>
-                    <CardTitle className="text-gray-900">
-                        Account Transactions
-                    </CardTitle>
+                    <CardTitle>Account Transactions</CardTitle>
                     <CardDescription>
-                        Choose between deposit or withdrawal operations
+                        Choose between deposit or withdrawal
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -311,18 +269,18 @@ export default function Transactions() {
                         </TabsList>
 
                         {/* Deposit Tab */}
-                        <TabsContent value="deposit" className="space-y-6">
+                        <TabsContent value="deposit">
                             <div className="grid gap-6 lg:grid-cols-2">
-                                {/* Deposit Info */}
+                                {/* Info */}
                                 <Card className="border-green-200 bg-green-50">
                                     <CardHeader>
                                         <CardTitle className="text-green-800 flex items-center gap-2">
-                                            <DollarSign className="h-5 w-5" />
-                                            Deposit Information
+                                            <DollarSign className="h-5 w-5" />{" "}
+                                            Deposit Info
                                         </CardTitle>
                                     </CardHeader>
-                                    <CardContent className="space-y-3">
-                                        <div className="bg-green-100 border border-green-200 rounded p-3 text-sm text-green-800">
+                                    <CardContent>
+                                        <div className="bg-green-100 p-3 rounded text-green-800 text-sm border border-green-200">
                                             <p className="font-medium">
                                                 Daily Limit: $50,000
                                             </p>
@@ -331,12 +289,10 @@ export default function Transactions() {
                                     </CardContent>
                                 </Card>
 
-                                {/* Deposit Form */}
-                                <Card className="border-blue-200">
+                                {/* Form */}
+                                <Card>
                                     <CardHeader>
-                                        <CardTitle className="text-gray-900">
-                                            Make a Deposit
-                                        </CardTitle>
+                                        <CardTitle>Make a Deposit</CardTitle>
                                     </CardHeader>
                                     <CardContent>
                                         <Form {...depositForm}>
@@ -358,7 +314,7 @@ export default function Transactions() {
                                                             </FormLabel>
                                                             <FormControl>
                                                                 <Input
-                                                                    placeholder="Enter Account ID (e.g., 12345)"
+                                                                    placeholder="12345"
                                                                     {...field}
                                                                 />
                                                             </FormControl>
@@ -366,7 +322,6 @@ export default function Transactions() {
                                                         </FormItem>
                                                     )}
                                                 />
-
                                                 <FormField
                                                     control={
                                                         depositForm.control
@@ -380,21 +335,16 @@ export default function Transactions() {
                                                             <FormControl>
                                                                 <Input
                                                                     type="number"
-                                                                    step="0.01"
-                                                                    min="0.01"
-                                                                    placeholder="250.75"
                                                                     {...field}
                                                                 />
                                                             </FormControl>
                                                             <FormDescription>
-                                                                Maximum: $50,000
-                                                                per transaction
+                                                                Max: $50,000
                                                             </FormDescription>
                                                             <FormMessage />
                                                         </FormItem>
                                                     )}
                                                 />
-
                                                 <FormField
                                                     control={
                                                         depositForm.control
@@ -415,7 +365,7 @@ export default function Transactions() {
                                                                     }
                                                                 >
                                                                     <SelectTrigger>
-                                                                        <SelectValue placeholder="Select type" />
+                                                                        <SelectValue placeholder="Select" />
                                                                     </SelectTrigger>
                                                                     <SelectContent>
                                                                         <SelectItem value="DEPOSIT">
@@ -432,23 +382,18 @@ export default function Transactions() {
                                                         </FormItem>
                                                     )}
                                                 />
-
                                                 <Button
                                                     type="submit"
-                                                    className="w-full bg-green-600 hover:bg-green-700 text-white"
+                                                    className="w-full bg-green-600 text-white"
                                                     disabled={isSubmitting}
                                                 >
                                                     {isSubmitting ? (
                                                         <>
-                                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                            Processing
-                                                            Deposit...
+                                                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                                            Processing...
                                                         </>
                                                     ) : (
-                                                        <>
-                                                            <ArrowDownCircle className="mr-2 h-4 w-4" />
-                                                            Deposit Money
-                                                        </>
+                                                        "Deposit"
                                                     )}
                                                 </Button>
                                             </form>
@@ -459,32 +404,28 @@ export default function Transactions() {
                         </TabsContent>
 
                         {/* Withdraw Tab */}
-                        <TabsContent value="withdraw" className="space-y-6">
+                        <TabsContent value="withdraw">
                             <div className="grid gap-6 lg:grid-cols-2">
-                                {/* Withdraw Info */}
                                 <Card className="border-red-200 bg-red-50">
                                     <CardHeader>
                                         <CardTitle className="text-red-800 flex items-center gap-2">
-                                            <CreditCard className="h-5 w-5" />
-                                            Withdrawal Information
+                                            <CreditCard className="h-5 w-5" />{" "}
+                                            Withdrawal Info
                                         </CardTitle>
                                     </CardHeader>
-                                    <CardContent className="space-y-3">
-                                        <div className="bg-red-100 border border-red-200 rounded p-3 text-sm text-red-800">
+                                    <CardContent>
+                                        <div className="bg-red-100 p-3 rounded text-red-800 text-sm border border-red-200">
                                             <p className="font-medium">
                                                 Daily Limit: $10,000
                                             </p>
-                                            <p>Processing fee may apply</p>
+                                            <p>Fees may apply</p>
                                         </div>
                                     </CardContent>
                                 </Card>
 
-                                {/* Withdraw Form */}
-                                <Card className="border-blue-200">
+                                <Card>
                                     <CardHeader>
-                                        <CardTitle className="text-gray-900">
-                                            Make a Withdrawal
-                                        </CardTitle>
+                                        <CardTitle>Make a Withdrawal</CardTitle>
                                     </CardHeader>
                                     <CardContent>
                                         <Form {...withdrawForm}>
@@ -506,7 +447,7 @@ export default function Transactions() {
                                                             </FormLabel>
                                                             <FormControl>
                                                                 <Input
-                                                                    placeholder="Enter Account ID (e.g., 12345)"
+                                                                    placeholder="12345"
                                                                     {...field}
                                                                 />
                                                             </FormControl>
@@ -514,7 +455,6 @@ export default function Transactions() {
                                                         </FormItem>
                                                     )}
                                                 />
-
                                                 <FormField
                                                     control={
                                                         withdrawForm.control
@@ -528,37 +468,28 @@ export default function Transactions() {
                                                             <FormControl>
                                                                 <Input
                                                                     type="number"
-                                                                    step="0.01"
-                                                                    min="0.01"
-                                                                    placeholder="150.00"
                                                                     {...field}
                                                                 />
                                                             </FormControl>
                                                             <FormDescription>
-                                                                Maximum: $10,000
-                                                                per transaction
+                                                                Max: $10,000
                                                             </FormDescription>
                                                             <FormMessage />
                                                         </FormItem>
                                                     )}
                                                 />
-
                                                 <Button
                                                     type="submit"
-                                                    className="w-full bg-red-600 hover:bg-red-700 text-white"
+                                                    className="w-full bg-red-600 text-white"
                                                     disabled={isSubmitting}
                                                 >
                                                     {isSubmitting ? (
                                                         <>
-                                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                            Processing
-                                                            Withdrawal...
+                                                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                                            Processing...
                                                         </>
                                                     ) : (
-                                                        <>
-                                                            <ArrowUpCircle className="mr-2 h-4 w-4" />
-                                                            Withdraw Money
-                                                        </>
+                                                        "Withdraw"
                                                     )}
                                                 </Button>
                                             </form>

@@ -140,8 +140,9 @@ public class UserServiceImpl implements UserService {
         newLoan.setLoanStatus("PENDING");
 
         LoanEntity savedLoan = loanRepository.save(newLoan);
-        return convertToLoanDto(savedLoan);
+        return convertToLoanDto(savedLoan); // ✅ returns dto with loanId
     }
+
 
     @Override
     public List<AccountDto> getMyAccounts(String username) {
@@ -203,9 +204,17 @@ public class UserServiceImpl implements UserService {
 
     private AccountDto convertToAccountDto(AccountEntity account) {
         AccountDto dto = new AccountDto();
-        BeanUtils.copyProperties(account, dto);
+        dto.setAccId(account.getAccId());
+        dto.setAccType(account.getAccType());
+        dto.setBalance(account.getBalance());
+        dto.setStatus(account.getStatus());
+
+        dto.setAccountHolderName(account.getCustomer().getCustName()); // or .getName()
+        dto.setBranchName(account.getBranch().getBranchName());        // assuming branch exists
+
         return dto;
     }
+
 
     private LoanDto convertToLoanDto(LoanEntity loan) {
         LoanDto dto = new LoanDto();

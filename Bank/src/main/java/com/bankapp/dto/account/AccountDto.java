@@ -14,6 +14,9 @@ public class AccountDto {
     private String status;
     private Long transId;
 
+    private String accountHolderName; // from Customer
+    private String branchName;
+
     public void setTransactionId(Integer transactionId) {
     }
 }

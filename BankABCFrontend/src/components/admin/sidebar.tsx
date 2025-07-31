@@ -1,9 +1,4 @@
-import {
-    Building2,
-    LayoutDashboard,
-    UserPlus,
-    CreditCard,
-} from "lucide-react";
+import { Building2, LayoutDashboard, UserPlus, CreditCard } from "lucide-react";
 import {
     Sidebar,
     SidebarContent,

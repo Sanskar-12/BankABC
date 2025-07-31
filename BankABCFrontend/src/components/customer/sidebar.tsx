@@ -25,6 +25,9 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { IconDotsVertical, IconLogout } from "@tabler/icons-react";
+import { useAuth } from "@/context/AuthContext";
+import { useNavigate } from "react-router-dom";
+import Cookies from "js-cookie";
 
 // Menu items
 const items = [
@@ -52,6 +55,13 @@ const items = [
 
 export default function AppSidebar() {
     const { isMobile } = useSidebar();
+    const navigate = useNavigate();
+
+    const handleLogout = () => {
+        Cookies.remove("auth_token");
+        Cookies.remove("user");
+        navigate("/login");
+    };
 
     return (
         <Sidebar className="border-r border-blue-200">
@@ -128,7 +138,7 @@ export default function AppSidebar() {
                         align="end"
                         sideOffset={4}
                     >
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleLogout}>
                             <IconLogout />
                             Log out
                         </DropdownMenuItem>

@@ -1,6 +1,8 @@
 package com.bankapp.controller;
 
 import com.bankapp.dto.branch.BranchDto;
+import com.bankapp.dto.customer.CustomerDto;
+import com.bankapp.dto.dashboard.DashboardStatsDto;
 import com.bankapp.dto.employee.EmployeeCreateDto;
 import com.bankapp.dto.employee.EmployeeDto;
 import com.bankapp.dto.employee.EmployeeUpdateDto;
@@ -23,6 +25,17 @@ import java.util.List;
 public class AdminController {
     @Autowired
     private AdminService adminService;
+
+    @GetMapping("/stats")
+    public ResponseEntity<DashboardStatsDto> getDashboardStats() {
+        return ResponseEntity.ok(adminService.getDashboardStats());
+    }
+
+
+    @GetMapping("/branches")
+    public ResponseEntity<List<BranchDto>> getAllBranches() {
+        return ResponseEntity.ok(adminService.getAllBranches());
+    }
 
     @PostMapping("/branches")
     public ResponseEntity<BranchDto> createBranch(@Valid @RequestBody BranchDto branchDto) {
@@ -63,4 +76,10 @@ public class AdminController {
         adminService.deleteCustomer(id);
         return ResponseEntity.ok("Customer record deleted successfully");
     }
+
+    @GetMapping("/customers")
+    public ResponseEntity<List<CustomerDto>> getAllCustomers() {
+        return ResponseEntity.ok(adminService.getAllCustomers());
+    }
+
 }
