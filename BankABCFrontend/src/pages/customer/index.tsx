@@ -64,6 +64,7 @@ export default function Dashboard() {
     }, []);
 
     useEffect(() => {
+        console.log("User accId in effect:", user.accId); 
         if (user.accId === 0) return;
 
         const fetchTransactions = async () => {

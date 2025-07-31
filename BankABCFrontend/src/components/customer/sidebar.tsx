@@ -57,11 +57,15 @@ export default function AppSidebar() {
     const { isMobile } = useSidebar();
     const navigate = useNavigate();
 
+    const { user } = useAuth();
+
     const handleLogout = () => {
         Cookies.remove("auth_token");
         Cookies.remove("user");
         navigate("/login");
     };
+
+    console.log(user);
 
     return (
         <Sidebar className="border-r border-blue-200">
@@ -121,7 +125,7 @@ export default function AppSidebar() {
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <p className="text-sm font-medium text-gray-900 truncate">
-                                            John Doe
+                                            {user?.username}
                                         </p>
                                         <p className="text-xs text-gray-600 truncate">
                                             Customer

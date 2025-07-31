@@ -95,59 +95,59 @@ const updateCustomerSchema = z.object({
 
 type UpdateCustomerFormData = z.infer<typeof updateCustomerSchema>;
 
-// Mock data for development - replace with actual API calls
-const mockCustomers: CustomerDto[] = [
-    {
-        custId: 1001,
-        custName: "John Doe",
-        email: "john.doe@example.com",
-        phone: "+1 (555) 123-4567",
-        address: "123 Main Street, Downtown, City 12345",
-        dob: "1985-03-15",
-        createdAt: "2023-01-15T10:30:00Z",
-        accountCount: 2,
-    },
-    {
-        custId: 1002,
-        custName: "Jane Smith",
-        email: "jane.smith@example.com",
-        phone: "+1 (555) 987-6543",
-        address: "456 Oak Avenue, Northside, City 12346",
-        dob: "1990-07-22",
-        createdAt: "2023-02-20T14:15:00Z",
-        accountCount: 1,
-    },
-    {
-        custId: 1003,
-        custName: "Robert Johnson",
-        email: "robert.j@example.com",
-        phone: "+1 (555) 555-1212",
-        address: "789 Pine Street, West End, City 12347",
-        dob: "1988-11-01",
-        createdAt: "2023-03-10T09:45:00Z",
-        accountCount: 3,
-    },
-    {
-        custId: 1004,
-        custName: "Emily Davis",
-        email: "emily.davis@example.com",
-        phone: "+1 (555) 444-3333",
-        address: "321 Elm Drive, East Side, City 12348",
-        dob: "1992-05-18",
-        createdAt: "2023-04-05T16:20:00Z",
-        accountCount: 1,
-    },
-    {
-        custId: 1005,
-        custName: "Michael Brown",
-        email: "michael.brown@example.com",
-        phone: "+1 (555) 777-8888",
-        address: "654 Maple Lane, South District, City 12349",
-        dob: "1987-09-30",
-        createdAt: "2023-05-12T11:10:00Z",
-        accountCount: 2,
-    },
-];
+// // Mock data for development - replace with actual API calls
+// const mockCustomers: CustomerDto[] = [
+//     {
+//         custId: 1001,
+//         custName: "John Doe",
+//         email: "john.doe@example.com",
+//         phone: "+1 (555) 123-4567",
+//         address: "123 Main Street, Downtown, City 12345",
+//         dob: "1985-03-15",
+//         createdAt: "2023-01-15T10:30:00Z",
+//         accountCount: 2,
+//     },
+//     {
+//         custId: 1002,
+//         custName: "Jane Smith",
+//         email: "jane.smith@example.com",
+//         phone: "+1 (555) 987-6543",
+//         address: "456 Oak Avenue, Northside, City 12346",
+//         dob: "1990-07-22",
+//         createdAt: "2023-02-20T14:15:00Z",
+//         accountCount: 1,
+//     },
+//     {
+//         custId: 1003,
+//         custName: "Robert Johnson",
+//         email: "robert.j@example.com",
+//         phone: "+1 (555) 555-1212",
+//         address: "789 Pine Street, West End, City 12347",
+//         dob: "1988-11-01",
+//         createdAt: "2023-03-10T09:45:00Z",
+//         accountCount: 3,
+//     },
+//     {
+//         custId: 1004,
+//         custName: "Emily Davis",
+//         email: "emily.davis@example.com",
+//         phone: "+1 (555) 444-3333",
+//         address: "321 Elm Drive, East Side, City 12348",
+//         dob: "1992-05-18",
+//         createdAt: "2023-04-05T16:20:00Z",
+//         accountCount: 1,
+//     },
+//     {
+//         custId: 1005,
+//         custName: "Michael Brown",
+//         email: "michael.brown@example.com",
+//         phone: "+1 (555) 777-8888",
+//         address: "654 Maple Lane, South District, City 12349",
+//         dob: "1987-09-30",
+//         createdAt: "2023-05-12T11:10:00Z",
+//         accountCount: 2,
+//     },
+// ];
 
 export default function ManageCustomers() {
     const [customers, setCustomers] = useState<CustomerDto[]>([]);
