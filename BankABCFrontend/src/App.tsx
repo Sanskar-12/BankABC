@@ -50,10 +50,11 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return children;
 };
 
-// ✅ Public Route (for login/signup)
 const PublicRoute = ({ children }: { children: React.ReactNode }) => {
     const { getCookie, loading } = useAuth();
+
     const token = getCookie("auth_token");
+    const rawUser = getCookie("user_data");
 
     if (loading) {
         return (
@@ -63,8 +64,25 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
         );
     }
 
-    if (token) {
-        return <Navigate to="/customer" replace />;
+    if (token && rawUser) {
+        try {
+            const user = JSON.parse(rawUser);
+            const role = user?.roles?.[0];
+
+            if (role === "ROLE_ADMIN") {
+                return <Navigate to="/admin" replace />;
+            } else if (role === "ROLE_EMPLOYEE") {
+                return <Navigate to="/employee" replace />;
+            } else if (role === "ROLE_USER") {
+                return <Navigate to="/customer" replace />;
+            } else {
+                // Unknown role fallback
+                return <Navigate to="/" replace />;
+            }
+        } catch (error) {
+            console.error("Failed to parse user_data cookie:", error);
+            return <Navigate to="/login" replace />;
+        }
     }
 
     return children;
@@ -80,6 +98,8 @@ const AppRoutes = () => {
     } catch (error) {
         console.error("Invalid user_data in cookie", error);
     }
+
+    const role = user?.roles?.[0];
 
     return (
         <Routes>
@@ -103,8 +123,8 @@ const AppRoutes = () => {
                 }
             />
 
-            {/* Protected Routes */}
-            {user && user.roles[0] === "ROLE_USER" && (
+            {/* Customer Routes */}
+            {role === "ROLE_USER" && (
                 <Route
                     path="/customer"
                     element={
@@ -120,7 +140,15 @@ const AppRoutes = () => {
                 </Route>
             )}
 
-            <Route path="/employee" element={<EmployeeLayout />}>
+            {/* Employee Routes */}
+            <Route
+                path="/employee"
+                element={
+                    <ProtectedRoute>
+                        <EmployeeLayout />
+                    </ProtectedRoute>
+                }
+            >
                 <Route index element={<EmployeeDashboard />} />
                 <Route path="loans" element={<Loans />} />
                 <Route
@@ -128,18 +156,33 @@ const AppRoutes = () => {
                     element={<ViewTransactions />}
                 />
                 <Route path="view-account" element={<ViewAccount />} />
-                {/* <Route /> */}
             </Route>
 
-            <Route path="/admin" element={<AdminLayout />}>
-                <Route index element={<AdminDashboard />} />
+            {/* Admin Routes */}
+            {role === "ROLE_ADMIN" && (
                 <Route
-                    path="manage-employees"
-                    element={<EmployeeManagement />}
-                />
-                <Route path="manage-branches" element={<BranchManagement />} />
-                <Route path="manage-customers" element={<ManageCustomers />} />
-            </Route>
+                    path="/admin"
+                    element={
+                        <ProtectedRoute>
+                            <AdminLayout />
+                        </ProtectedRoute>
+                    }
+                >
+                    <Route index element={<AdminDashboard />} />
+                    <Route
+                        path="manage-employees"
+                        element={<EmployeeManagement />}
+                    />
+                    <Route
+                        path="manage-branches"
+                        element={<BranchManagement />}
+                    />
+                    <Route
+                        path="manage-customers"
+                        element={<ManageCustomers />}
+                    />
+                </Route>
+            )}
         </Routes>
     );
 };

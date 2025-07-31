@@ -17,10 +17,13 @@ interface User {
     role?: string; // Optional: if you store user role
 }
 
-// Context type
 interface AuthContextType {
     user: User | null;
-    login: (credentials: any) => Promise<{ success: boolean; error?: string }>;
+    login: (
+        credentials: any,
+    ) => Promise<
+        { success: true; role: string } | { success: false; error: string }
+    >;
     register: (
         userData: any,
     ) => Promise<{ success: boolean; error?: string; data?: any }>;
@@ -94,9 +97,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setLoading(false);
     }, []);
 
-    const login = async (credentials: any) => {
+    const login = async (
+        credentials: any,
+    ): Promise<
+        { success: true; role: string } | { success: false; error: string }
+    > => {
         try {
-            console.log(credentials);
             const response = await axios.post(
                 "http://localhost:8080/api/auth/login",
                 credentials,
@@ -111,13 +117,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
             setCookie("auth_token", data.token);
             setCookie("user_data", JSON.stringify(data));
-
             setUser(data);
 
-            return { success: true };
+            const role = data.role || (data.roles?.[0] ?? "");
+            return { success: true, role: role as string };
         } catch (error: any) {
-            console.error("Login error:", error);
-            return { success: false, error: error.message };
+            const errMsg =
+                error.response?.data?.message ||
+                error.message ||
+                "Login failed";
+            return { success: false, error: errMsg };
         }
     };
 

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import axios from "axios";
 import * as z from "zod";
 import {
     Card,
@@ -64,6 +65,7 @@ import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useAuth } from "@/context/AuthContext";
 
 // Types based on the Java backend DTOs
 interface EmployeeDto {
@@ -161,6 +163,7 @@ export default function EmployeeManagement() {
     const [currentEmployee, setCurrentEmployee] = useState<EmployeeDto | null>(
         null,
     );
+    const { getCookie } = useAuth();
     const [error, setError] = useState<string | null>(null);
 
     const createForm = useForm<CreateEmployeeFormData>({
@@ -184,66 +187,78 @@ export default function EmployeeManagement() {
         },
     });
 
-    // API Functions - Replace these with actual API calls
     const fetchEmployees = async (): Promise<EmployeeDto[]> => {
-        // Simulate API call to GET /api/admin/employees
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        return mockEmployees;
+        const response = await axios.get(
+            "http://localhost:8080/api/admin/employees",
+            {
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${getCookie("auth_token")}`,
+                },
+            },
+        );
+        return response.data;
     };
-
     const fetchBranches = async (): Promise<BranchDto[]> => {
-        // Simulate API call to GET /api/admin/branches (if available)
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        return mockBranches;
+        const response = await axios.get(
+            "http://localhost:8080/api/admin/branches",
+            {
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${getCookie("auth_token")}`,
+                },
+            },
+        );
+        return response.data;
     };
-
     const createEmployee = async (
         data: CreateEmployeeFormData,
     ): Promise<void> => {
-        // Simulate API call to POST /api/admin/employees
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-
-        const newEmployee: EmployeeDto = {
-            empId: Math.max(...employees.map((e) => e.empId)) + 1,
-            empName: data.employeeName,
+        const payload = {
+            employeeName: data.employeeName,
             email: data.email,
-            dob: format(data.dateOfBirth, "yyyy-MM-dd"),
+            password: data.password,
+            dateOfBirth: format(data.dateOfBirth, "yyyy-MM-dd"),
             phone: data.phone,
-            branchId: Number.parseInt(data.branchId),
+            branchId: Number(data.branchId),
         };
 
-        setEmployees((prev) => [...prev, newEmployee]);
-        console.log("Created employee:", newEmployee);
+        await axios.post("http://localhost:8080/api/admin/employees", payload, {
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${getCookie("auth_token")}`,
+            },
+        });
     };
-
     const updateEmployee = async (
         id: number,
         data: UpdateEmployeeFormData,
     ): Promise<void> => {
-        // Simulate API call to PUT /api/admin/employees/{id}
-        await new Promise((resolve) => setTimeout(resolve, 1500));
+        const payload = {
+            empName: data.empName,
+            phone: data.phone,
+            branchId: Number(data.branchId),
+        };
 
-        setEmployees((prev) =>
-            prev.map((emp) =>
-                emp.empId === id
-                    ? {
-                          ...emp,
-                          empName: data.empName,
-                          phone: data.phone,
-                          branchId: Number.parseInt(data.branchId),
-                      }
-                    : emp,
-            ),
+        await axios.put(
+            `http://localhost:8080/api/admin/employees/${id}`,
+            payload,
+            {
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${getCookie("auth_token")}`,
+                },
+            },
         );
-        console.log("Updated employee:", id, data);
     };
 
     const deleteEmployee = async (id: number): Promise<void> => {
-        // Simulate API call to DELETE /api/admin/employees/{id}
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-
-        setEmployees((prev) => prev.filter((emp) => emp.empId !== id));
-        console.log("Deleted employee:", id);
+        await axios.delete(`http://localhost:8080/api/admin/employees/${id}`, {
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${getCookie("auth_token")}`,
+            },
+        });
     };
 
     // Load initial data

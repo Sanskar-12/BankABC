@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import axios from "axios";
 import * as z from "zod";
 import {
     Card,
@@ -48,6 +49,7 @@ import {
 } from "@/components/ui/dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/context/AuthContext";
 
 // Types based on the Java backend DTOs
 interface BranchDto {
@@ -110,7 +112,7 @@ export default function ManageBranchesContent() {
     >(null);
     const [currentBranch, setCurrentBranch] = useState<BranchDto | null>(null);
     const [error, setError] = useState<string | null>(null);
-
+    const { getCookie } = useAuth();
     const createForm = useForm<BranchFormData>({
         resolver: zodResolver(branchSchema),
         defaultValues: {
@@ -129,49 +131,61 @@ export default function ManageBranchesContent() {
 
     // API Functions - Replace these with actual API calls
     const fetchBranches = async (): Promise<BranchDto[]> => {
-        // Simulate API call to GET /api/admin/branches
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        return mockBranches;
+        const { data } = await axios.get(
+            "http://localhost:8080/api/admin/branches",
+            {
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${getCookie("auth_token")}`,
+                },
+            },
+        );
+        console.log(data);
+        return data;
     };
 
     const createBranch = async (data: BranchFormData): Promise<BranchDto> => {
-        // Simulate API call to POST /api/admin/branches
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-
-        const newBranch: BranchDto = {
-            branchId: Math.max(...branches.map((b) => b.branchId)) + 1,
-            branchName: data.branchName,
-            branchAddr: data.branchAddr,
-        };
-
+        const response = await axios.post(
+            "http://localhost:8080/api/admin/branches",
+            data,
+            {
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${getCookie("auth_token")}`,
+                },
+            },
+        );
+        const newBranch = response.data;
         setBranches((prev) => [...prev, newBranch]);
-        console.log("Created branch:", newBranch);
         return newBranch;
     };
 
-    const updateBranch = async (
-        id: number,
-        data: BranchFormData,
-    ): Promise<BranchDto> => {
-        // Simulate API call to PUT /api/admin/branches (assuming this endpoint exists)
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-
-        const updatedBranch = { branchId: id, ...data };
-        setBranches((prev) =>
-            prev.map((branch) =>
-                branch.branchId === id ? updatedBranch : branch,
-            ),
-        );
-        console.log("Updated branch:", updatedBranch);
-        return updatedBranch;
-    };
-
+    //      const updateBranch = async (
+    //     id: number,
+    //     data: BranchFormData,
+    // ): Promise<BranchDto> => {
+    //     const response = await axios.put(`http://localhost:8080/api/admin/branches/${id}`, data,{
+    //             headers: {
+    //                 "Content-Type": "application/json",
+    //                 Authorization: `Bearer ${getCookie("auth_token")}`,
+    //             },
+    //         });
+    //     const updatedBranch = response.data;
+    //     setBranches((prev) =>
+    //         prev.map((branch) =>
+    //             branch.branchId === id ? updatedBranch : branch,
+    //         ),
+    //     );
+    //     return updatedBranch;
+    // };
     const deleteBranch = async (id: number): Promise<void> => {
-        // Simulate API call to DELETE /api/admin/branches/{id}
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-
+        await axios.delete(`http://localhost:8080/api/admin/branches/${id}`, {
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${getCookie("auth_token")}`,
+            },
+        });
         setBranches((prev) => prev.filter((branch) => branch.branchId !== id));
-        console.log("Deleted branch:", id);
     };
 
     // Load initial data
@@ -257,21 +271,21 @@ export default function ManageBranchesContent() {
         }
     };
 
-    const onUpdateSubmit = async (values: BranchFormData) => {
-        if (!currentBranch) return;
+    // const onUpdateSubmit = async (values: BranchFormData) => {
+    //     if (!currentBranch) return;
 
-        try {
-            setIsSubmitting(true);
-            setError(null);
-            await updateBranch(currentBranch.branchId, values);
-            setDialogType(null);
-            setCurrentBranch(null);
-        } catch (err) {
-            setError("Failed to update branch. Please try again.");
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
+    //     try {
+    //         setIsSubmitting(true);
+    //         setError(null);
+    //         await updateBranch(currentBranch.branchId, values);
+    //         setDialogType(null);
+    //         setCurrentBranch(null);
+    //     } catch (err) {
+    //         setError("Failed to update branch. Please try again.");
+    //     } finally {
+    //         setIsSubmitting(false);
+    //     }
+    // };
 
     const onDeleteConfirm = async () => {
         if (!currentBranch) return;
@@ -299,7 +313,7 @@ export default function ManageBranchesContent() {
                     Manage Branches
                 </h1>
                 <p className="text-gray-600 mt-1">
-                    View, create, update, and delete bank branch locations.
+                    View, create,and delete bank branch locations.
                 </p>
             </div>
 
@@ -388,7 +402,7 @@ export default function ManageBranchesContent() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {filteredBranches.map((branch) => (
+                                    {filteredBranches?.map((branch) => (
                                         <TableRow key={branch.branchId}>
                                             <TableCell className="font-medium">
                                                 <Badge variant="outline">
@@ -408,7 +422,7 @@ export default function ManageBranchesContent() {
                                             </TableCell>
                                             <TableCell className="text-center">
                                                 <div className="flex items-center justify-center gap-2">
-                                                    <Button
+                                                    {/* <Button
                                                         variant="outline"
                                                         size="icon"
                                                         className="h-8 w-8 text-blue-600 hover:bg-blue-50 bg-transparent"
@@ -423,7 +437,7 @@ export default function ManageBranchesContent() {
                                                         <span className="sr-only">
                                                             Edit
                                                         </span>
-                                                    </Button>
+                                                    </Button> */}
                                                     <Button
                                                         variant="outline"
                                                         size="icon"
@@ -540,7 +554,7 @@ export default function ManageBranchesContent() {
             </Dialog>
 
             {/* Edit Branch Dialog */}
-            {currentBranch && (
+            {/* {currentBranch && (
                 <Dialog
                     open={dialogType === "edit"}
                     onOpenChange={() => setDialogType(null)}
@@ -626,7 +640,7 @@ export default function ManageBranchesContent() {
                         </Form>
                     </DialogContent>
                 </Dialog>
-            )}
+            )} */}
 
             {/* Delete Branch Confirmation Dialog */}
             {currentBranch && (

@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Building2 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 
@@ -32,7 +32,8 @@ export default function LoginForm({
         password: "",
     });
     const { login } = useAuth();
-    const [isLogin, setIsLogin] = useState(false);
+    const navigate = useNavigate();
+    // const [isLogin, setIsLogin] = useState(false);
 
     const { user } = useAuth();
     console.log(user);
@@ -42,29 +43,35 @@ export default function LoginForm({
         setCredentials((prev) => ({ ...prev, [name]: value }));
     };
 
-    // A single submission handler
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        // In a real app, you would now make an API call with the role and credentials
-        console.log({
-            role,
-            email: credentials.email,
-            password: credentials.password,
-        });
 
         const loginData = {
             username: credentials.email,
             password: credentials.password,
         };
+
         const result = await login(loginData);
+
+        console.log(result);
+
         if (result.success) {
-            toast.success(`Signed In successfully!`);
-            setIsLogin(true);
+            toast.success("Signed in successfully!");
+
+            // 🔁 Redirect based on role
+            if (result.role === "ROLE_ADMIN") {
+                navigate("/admin/dashboard");
+            } else if (result.role === "ROLE_EMPLOYEE") {
+                navigate("/employee/dashboard");
+            } else if (result.role === "ROLE_CUSTOMER") {
+                navigate("/customer/dashboard");
+            } else {
+                navigate("/");
+            }
         } else {
             toast.error(result.error || "Signin failed. Please try again.");
         }
     };
-
     return (
         <div className="bg-muted flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
             <div className="flex w-full max-w-lg flex-col gap-6">

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import axios from "axios";
 import {
     Card,
     CardContent,
@@ -60,6 +61,7 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/context/AuthContext";
 
 // Types based on the Java backend DTOs
 interface CustomerDto {
@@ -162,7 +164,7 @@ export default function ManageCustomers() {
         null,
     );
     const [error, setError] = useState<string | null>(null);
-
+    const { getCookie } = useAuth();
     const updateForm = useForm<UpdateCustomerFormData>({
         resolver: zodResolver(updateCustomerSchema),
         defaultValues: {
@@ -176,46 +178,58 @@ export default function ManageCustomers() {
 
     // API Functions - Replace these with actual API calls
     const fetchCustomers = async (): Promise<CustomerDto[]> => {
-        // Simulate API call to GET /api/admin/customers
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        return mockCustomers;
+        const response = await axios.get(
+            "http://localhost:8080/api/admin/customers",
+            {
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${getCookie("auth_token")}`,
+                },
+            },
+        );
+        return response.data;
     };
 
     const updateCustomer = async (
         id: number,
         data: UpdateCustomerFormData,
     ): Promise<CustomerDto> => {
-        // Simulate API call to PUT /api/admin/customers/{id}
-        await new Promise((resolve) => setTimeout(resolve, 1500));
+        const response = await axios.put(
+            `http://localhost:8080/api/admin/customers/${id}`,
+            {
+                ...data,
+                dob: format(data.dob, "yyyy-MM-dd"), // format date
+            },
+            {
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${getCookie("auth_token")}`,
+                },
+            },
+        );
 
-        const updatedCustomer: CustomerDto = {
-            custId: id,
-            custName: data.custName,
-            email: data.email,
-            phone: data.phone,
-            address: data.address,
-            dob: format(data.dob, "yyyy-MM-dd"),
-            accountCount:
-                customers.find((c) => c.custId === id)?.accountCount || 0,
-        };
+        const updatedCustomer: CustomerDto = response.data;
 
         setCustomers((prev) =>
             prev.map((customer) =>
                 customer.custId === id ? updatedCustomer : customer,
             ),
         );
-        console.log("Updated customer:", updatedCustomer);
+
         return updatedCustomer;
     };
 
     const deleteCustomer = async (id: number): Promise<void> => {
-        // Simulate API call to DELETE /api/admin/customers/{id}
-        await new Promise((resolve) => setTimeout(resolve, 1500));
+        await axios.delete(`http://localhost:8080/api/admin/customers/${id}`, {
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${getCookie("auth_token")}`,
+            },
+        });
 
         setCustomers((prev) =>
             prev.filter((customer) => customer.custId !== id),
         );
-        console.log("Deleted customer:", id);
     };
 
     // Load initial data

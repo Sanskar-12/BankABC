@@ -27,7 +27,7 @@ const SignUp = ({ className, ...props }: React.ComponentProps<"div">) => {
         phone: "",
     });
     const navigate = useNavigate();
-    const [isSignUp, setIsSignUp] = useState(false);
+    // const [isSignUp, setIsSignUp] = useState(false);
     const { register } = useAuth();
 
     // Handle input changes
@@ -59,7 +59,7 @@ const SignUp = ({ className, ...props }: React.ComponentProps<"div">) => {
         if (result.success) {
             toast.success(`account created successfully! Please sign in.`);
             navigate("/login");
-            setIsSignUp(true);
+            // setIsSignUp(true);
         } else {
             toast.error(
                 result.error || "Registration failed. Please try again.",
