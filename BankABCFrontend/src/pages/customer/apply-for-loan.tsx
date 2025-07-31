@@ -67,8 +67,8 @@ export default function ApplyForLoan() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [selectedLoanType, setSelectedLoanType] = useState<string>("");
-    const [loanId,setLoanId]=useState("")
-    const {getCookie}=useAuth()
+    const [loanId, setLoanId] = useState("");
+    const { getCookie } = useAuth();
 
     const form = useForm<FormData>({
         resolver: zodResolver(formSchema),
@@ -138,16 +138,20 @@ export default function ApplyForLoan() {
             loanAmount: Number.parseFloat(values.loanAmount),
         };
 
-          const {data}=await axios.post("http://localhost:8080/api/user/loans/apply", payload, {
-      headers: {
-        "Content-Type": "application/json",
-         Authorization: `Bearer ${getCookie("auth_token")}`,
-      },
-    });
+        const { data } = await axios.post(
+            "http://localhost:8080/api/user/loans/apply",
+            payload,
+            {
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${getCookie("auth_token")}`,
+                },
+            },
+        );
 
-    setLoanId(data.loanId)
+        setLoanId(data.loanId);
 
-    console.log(data)
+        console.log(data);
         // Simulate API call
         await new Promise((resolve) => setTimeout(resolve, 2000));
 
@@ -178,7 +182,7 @@ export default function ApplyForLoan() {
                     </p>
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-md mx-auto">
                         <p className="text-sm text-blue-800">
-                            <strong>Application ID:</strong> 
+                            <strong>Application ID:</strong>
                             {loanId}
                         </p>
                         <p className="text-sm text-blue-800 mt-1">

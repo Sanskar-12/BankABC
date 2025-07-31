@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Building2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { toast } from 'sonner';
+import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 
 const SignUp = ({ className, ...props }: React.ComponentProps<"div">) => {
@@ -26,9 +26,9 @@ const SignUp = ({ className, ...props }: React.ComponentProps<"div">) => {
         dateOfBirth: "",
         phone: "",
     });
-    const navigate=useNavigate()
+    const navigate = useNavigate();
     const [isSignUp, setIsSignUp] = useState(false);
-    const {register}=useAuth()
+    const { register } = useAuth();
 
     // Handle input changes
     const handleCustomerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -37,27 +37,33 @@ const SignUp = ({ className, ...props }: React.ComponentProps<"div">) => {
     };
 
     // Handle form submission
-    const handleCustomerSubmit =async (e: React.FormEvent) => {
+    const handleCustomerSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const signupData = {
             customerName: customerData.customerName,
             email: customerData.email,
             password: customerData.password,
             phone: customerData.phone,
-            dateOfBirth: new Date(customerData.dateOfBirth).toISOString().split("T")[0],
+            dateOfBirth: new Date(customerData.dateOfBirth)
+                .toISOString()
+                .split("T")[0],
         };
 
         console.log("Customer SignUp Data:", {
             ...customerData,
-            dateOfBirth: new Date(customerData.dateOfBirth).toISOString().split("T")[0],
+            dateOfBirth: new Date(customerData.dateOfBirth)
+                .toISOString()
+                .split("T")[0],
         });
-         const result = await register(signupData);
+        const result = await register(signupData);
         if (result.success) {
-          toast.success(`account created successfully! Please sign in.`);
-            navigate("/login")
-          setIsSignUp(true);
+            toast.success(`account created successfully! Please sign in.`);
+            navigate("/login");
+            setIsSignUp(true);
         } else {
-          toast.error(result.error || 'Registration failed. Please try again.');
+            toast.error(
+                result.error || "Registration failed. Please try again.",
+            );
         }
         // TODO: Add API call for customer sign-up
     };

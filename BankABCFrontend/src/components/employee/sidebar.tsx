@@ -1,10 +1,13 @@
 import {
     Building2,
     LayoutDashboard,
-    UserPlus,
-    CreditCard,
+    FileText,
+    User,
     Banknote,
+    CreditCard,
+    Settings,
 } from "lucide-react";
+
 import {
     Sidebar,
     SidebarContent,
@@ -25,43 +28,33 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { IconDotsVertical, IconLogout } from "@tabler/icons-react";
-import { useAuth } from "@/context/AuthContext";
-import { useNavigate } from "react-router-dom";
-import Cookies from "js-cookie";
 
-// Menu items
+// Menu items based on Employee Actions APIs
 const items = [
     {
         title: "Dashboard",
-        url: "/customer",
+        url: "/employee",
         icon: LayoutDashboard,
     },
     {
-        title: "Create Account",
-        url: "/customer/create-account",
-        icon: UserPlus,
+        title: "Loan",
+        url: "/employee/loans",
+        icon: FileText,
     },
     {
-        title: "Transactions",
-        url: "/customer/transactions",
+        title: "View Account",
+        url: "/employee/view-account",
+        icon: User,
+    },
+    {
+        title: "View Account Transactions",
+        url: "/employee/view-transactions",
         icon: CreditCard,
-    },
-    {
-        title: "Apply for Loan",
-        url: "/customer/loan",
-        icon: Banknote,
     },
 ];
 
 export default function AppSidebar() {
     const { isMobile } = useSidebar();
-    const navigate = useNavigate();
-
-    const handleLogout = () => {
-        Cookies.remove("auth_token");
-        Cookies.remove("user");
-        navigate("/login");
-    };
 
     return (
         <Sidebar className="border-r border-blue-200">
@@ -74,7 +67,7 @@ export default function AppSidebar() {
                         <h2 className="text-xl font-bold text-gray-900">
                             BankABC
                         </h2>
-                        <p className="text-xs text-gray-600">Banking System</p>
+                        <p className="text-xs text-gray-600">Employee Portal</p>
                     </div>
                 </div>
             </SidebarHeader>
@@ -82,7 +75,7 @@ export default function AppSidebar() {
             <SidebarContent className="bg-white">
                 <SidebarGroup>
                     <SidebarGroupLabel className="text-gray-700 font-semibold px-3 py-2">
-                        Main Menu
+                        Employee Actions
                     </SidebarGroupLabel>
                     <SidebarGroupContent>
                         <SidebarMenu>
@@ -124,7 +117,7 @@ export default function AppSidebar() {
                                             John Doe
                                         </p>
                                         <p className="text-xs text-gray-600 truncate">
-                                            Customer
+                                            Employee
                                         </p>
                                     </div>
                                 </div>
@@ -138,7 +131,7 @@ export default function AppSidebar() {
                         align="end"
                         sideOffset={4}
                     >
-                        <DropdownMenuItem onClick={handleLogout}>
+                        <DropdownMenuItem>
                             <IconLogout />
                             Log out
                         </DropdownMenuItem>
