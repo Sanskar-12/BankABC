@@ -1,6 +1,9 @@
+"use client";
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import axios from "axios";
 import * as z from "zod";
 import {
     Card,
@@ -12,13 +15,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
-import {
     Form,
     FormControl,
     FormField,
@@ -27,26 +23,17 @@ import {
     FormMessage,
     FormDescription,
 } from "@/components/ui/form";
-import {
-    Loader2,
-    Search,
-    User,
-    DollarSign,
-    CreditCard,
-    RefreshCw,
-} from "lucide-react";
+import { Loader2, Search, RefreshCw, User, DollarSign, CreditCard } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/context/AuthContext";
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-    DialogFooter,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label"; // Import Label
+    Select,
+    SelectTrigger,
+    SelectContent,
+    SelectItem,
+    SelectValue,
+} from "@/components/ui/select";
 
-// Zod schema for account ID input
 const accountIdSchema = z.object({
     accountId: z
         .string()
@@ -56,70 +43,24 @@ const accountIdSchema = z.object({
 
 type AccountIdFormData = z.infer<typeof accountIdSchema>;
 
-// Zod schema for updating account status
-const updateAccountStatusSchema = z.object({
-    status: z.enum(["ACTIVE", "INACTIVE", "SUSPENDED", "CLOSED"]),
-});
-
-type UpdateAccountStatusFormData = z.infer<typeof updateAccountStatusSchema>;
-
-// Mock Account Data (simulating GET /api/employee/accounts/{id})
-const mockAccounts = {
-    "1001": {
-        accId: 1001,
-        accName: "John Doe Savings",
-        accType: "SAVINGS",
-        balance: 12345.67,
-        status: "ACTIVE",
-        customerId: "CUST001",
-        email: "john.doe@example.com",
-        phone: "+1 (555) 123-4567",
-    },
-    "1002": {
-        accId: 1002,
-        accName: "Jane Smith Current",
-        accType: "CURRENT",
-        balance: 5432.1,
-        status: "INACTIVE",
-        customerId: "CUST002",
-        email: "jane.smith@example.com",
-        phone: "+1 (555) 987-6543",
-    },
-    "1003": {
-        accId: 1003,
-        accName: "Bob Johnson Business",
-        accType: "BUSINESS",
-        balance: 78901.23,
-        status: "SUSPENDED",
-        customerId: "CUST003",
-        email: "bob.johnson@example.com",
-        phone: "+1 (555) 555-1212",
-    },
-};
-
 export default function ManageAccountContent() {
     const [account, setAccount] = useState<any | null>(null);
     const [loadingAccount, setLoadingAccount] = useState(false);
     const [searchError, setSearchError] = useState<string | null>(null);
-    const [searchedAccountId, setSearchedAccountId] = useState<string | null>(
-        null,
-    );
+    const [searchedAccountId, setSearchedAccountId] = useState<string | null>(null);
 
     const [updatingStatus, setUpdatingStatus] = useState(false);
-    const [dialogOpen, setDialogOpen] = useState(false);
+    const [selectedStatus, setSelectedStatus] = useState<string>("ACTIVE");
+
+    const [isEditing, setIsEditing] = useState(false);
+    const [editData, setEditData] = useState<any>({});
+    const [saving, setSaving] = useState(false);
+
+    const { getCookie } = useAuth();
 
     const searchForm = useForm<AccountIdFormData>({
         resolver: zodResolver(accountIdSchema),
-        defaultValues: {
-            accountId: "",
-        },
-    });
-
-    const updateStatusForm = useForm<UpdateAccountStatusFormData>({
-        resolver: zodResolver(updateAccountStatusSchema),
-        defaultValues: {
-            status: "ACTIVE",
-        },
+        defaultValues: { accountId: "" },
     });
 
     const getStatusBadgeVariant = (status: string) => {
@@ -129,7 +70,6 @@ export default function ManageAccountContent() {
             case "INACTIVE":
                 return "secondary";
             case "SUSPENDED":
-                return "destructive";
             case "CLOSED":
                 return "destructive";
             default:
@@ -144,56 +84,101 @@ export default function ManageAccountContent() {
         setSearchedAccountId(values.accountId);
 
         try {
-            await new Promise((resolve) => setTimeout(resolve, 1500)); // Simulate API call
-
-            const fetchedAccount = (mockAccounts as any)[values.accountId];
-            if (fetchedAccount) {
-                setAccount(fetchedAccount);
-            } else {
-                setSearchError(`No account found for ID: ${values.accountId}`);
+            const token = getCookie("auth_token");
+            if (!token) {
+                setSearchError("Authentication token not found.");
+                setLoadingAccount(false);
+                return;
             }
-        } catch (err) {
-            setSearchError(
-                "Failed to fetch account details. Please try again.",
+
+            const res = await axios.get(
+                `http://localhost:8080/api/employee/accounts/${values.accountId}`,
+                {
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
             );
+            console.log("Account data:", res.data);
+
+            setAccount(res.data);
+            setEditData(res.data);
+            setSelectedStatus(res.data.status);
+        } catch (err) {
+            setSearchError(`No account found for ID: ${values.accountId}`);
             console.error(err);
         } finally {
             setLoadingAccount(false);
         }
     }
 
-    const handleUpdateStatusClick = () => {
-        if (account) {
-            updateStatusForm.reset({
-                status: account.status as UpdateAccountStatusFormData["status"],
-            });
-            setDialogOpen(true);
-        }
-    };
-
-    async function onUpdateStatusSubmit(values: UpdateAccountStatusFormData) {
-        if (!account) return;
-
+    async function updateAccountStatus(status: string) {
+        if (!searchedAccountId) return;
         setUpdatingStatus(true);
-        // Simulate PUT /api/employee/accounts/{id}/status/{status}
-        await new Promise((resolve) => setTimeout(resolve, 1500));
 
-        setAccount((prevAccount: any) => ({
-            ...prevAccount,
-            status: values.status,
-        }));
-        console.log(
-            `Updated Account ${account.accId} status to:`,
-            values.status,
-        );
+        try {
+            const token = getCookie("auth_token");
+            if (!token) {
+                setSearchError("Authentication token not found.");
+                setUpdatingStatus(false);
+                return;
+            }
 
-        setUpdatingStatus(false);
-        setDialogOpen(false);
+            const res = await axios.put(
+               `http://localhost:8080/api/employee/accounts/${searchedAccountId}/status/${status}`,
+                {},
+                {
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+
+            setAccount(res.data);
+        } catch (err) {
+            console.error(err);
+            setSearchError("Failed to update account status.");
+        } finally {
+            setUpdatingStatus(false);
+        }
+    }
+
+    function handleEditClick() {
+        setEditData({ ...account });
+        setIsEditing(true);
+    }
+
+    function handleChange(field: string, value: any) {
+        setEditData((prev: any) => ({ ...prev, [field]: value }));
+    }
+
+    async function saveAccountChanges() {
+        setSaving(true);
+        try {
+            const token = getCookie("auth_token");
+            await axios.put(
+                `http://localhost:8080/api/employee/accounts/${account.accId}`,
+                editData,
+                {
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+            setAccount(editData);
+            setIsEditing(false);
+        } catch (err) {
+            console.error("Failed to update account", err);
+        } finally {
+            setSaving(false);
+        }
     }
 
     return (
         <div className="space-y-6">
-            {/* Page Header */}
             <div>
                 <h1 className="text-3xl font-bold text-gray-900">
                     Manage Customer Accounts
@@ -203,22 +188,17 @@ export default function ManageAccountContent() {
                 </p>
             </div>
 
+            {/* Search Card */}
             <Card className="border-blue-200 max-w-2xl mx-auto">
                 <CardHeader>
-                    <CardTitle className="text-gray-900">
-                        Search Account
-                    </CardTitle>
+                    <CardTitle className="text-gray-900">Search Account</CardTitle>
                     <CardDescription>
-                        Enter the customer's account ID to view and manage their
-                        account.
+                        Enter the customer's account ID to view and manage their account.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Form {...searchForm}>
-                        <form
-                            onSubmit={searchForm.handleSubmit(onSearchSubmit)}
-                            className="space-y-4"
-                        >
+                        <form onSubmit={searchForm.handleSubmit(onSearchSubmit)} className="space-y-4">
                             <FormField
                                 control={searchForm.control}
                                 name="accountId"
@@ -226,14 +206,10 @@ export default function ManageAccountContent() {
                                     <FormItem>
                                         <FormLabel>Account ID</FormLabel>
                                         <FormControl>
-                                            <Input
-                                                placeholder="e.g., 1001"
-                                                {...field}
-                                            />
+                                            <Input placeholder="e.g., 1001" {...field} />
                                         </FormControl>
                                         <FormDescription>
-                                            The unique identifier for the
-                                            customer's bank account.
+                                            The unique identifier for the customer's bank account.
                                         </FormDescription>
                                         <FormMessage />
                                     </FormItem>
@@ -261,19 +237,9 @@ export default function ManageAccountContent() {
                 </CardContent>
             </Card>
 
-            {/* Search Results / Account Details */}
             {searchError && (
                 <div className="bg-red-50 border border-red-200 text-red-800 p-4 rounded-lg max-w-2xl mx-auto">
                     <p className="font-medium">{searchError}</p>
-                </div>
-            )}
-
-            {loadingAccount && (
-                <div className="flex items-center justify-center py-12 max-w-2xl mx-auto">
-                    <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-                    <span className="ml-3 text-gray-600">
-                        Loading account details...
-                    </span>
                 </div>
             )}
 
@@ -288,181 +254,116 @@ export default function ManageAccountContent() {
                                 Overview of the customer's account information.
                             </CardDescription>
                         </div>
-                        <Button
-                            variant="outline"
-                            onClick={() => {
-                                setAccount(null);
-                                setSearchedAccountId(null);
-                                searchForm.reset();
-                            }}
-                        >
-                            <RefreshCw className="h-4 w-4 mr-2" /> New Search
-                        </Button>
+                        {!isEditing ? (
+                            <Button variant="outline" onClick={handleEditClick}>
+                                Edit
+                            </Button>
+                        ) : (
+                            <div className="flex gap-2">
+                                <Button
+                                    className="bg-blue-600 text-white"
+                                    onClick={saveAccountChanges}
+                                    disabled={saving}
+                                >
+                                    {saving ? (
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    ) : (
+                                        "Save"
+                                    )}
+                                </Button>
+                                <Button variant="outline" onClick={() => setIsEditing(false)}>
+                                    Cancel
+                                </Button>
+                            </div>
+                        )}
                     </CardHeader>
+
                     <CardContent className="grid gap-4 md:grid-cols-2">
                         <div className="space-y-2">
                             <h3 className="font-semibold text-gray-800 flex items-center gap-2">
-                                <User className="h-5 w-5 text-blue-600" />{" "}
-                                Customer Information
+                                <User className="h-5 w-5 text-blue-600" /> Customer Information
                             </h3>
+
                             <p className="text-sm text-gray-600">
-                                <span className="font-medium">
-                                    Customer ID:
-                                </span>{" "}
-                                {account.customerId}
+                                <span className="font-medium">Account Name:</span>{" "}
+                                {isEditing ? (
+                                    <Input value={editData.accName} onChange={(e) => handleChange("accName", e.target.value)} />
+                                ) : (
+                                    account.accName
+                                )}
                             </p>
-                            <p className="text-sm text-gray-600">
-                                <span className="font-medium">
-                                    Account Name:
-                                </span>{" "}
-                                {account.accName}
-                            </p>
+
                             <p className="text-sm text-gray-600">
                                 <span className="font-medium">Email:</span>{" "}
-                                {account.email}
+                                {isEditing ? (
+                                    <Input value={editData.email} onChange={(e) => handleChange("email", e.target.value)} />
+                                ) : (
+                                    account.email
+                                )}
                             </p>
+
                             <p className="text-sm text-gray-600">
                                 <span className="font-medium">Phone:</span>{" "}
-                                {account.phone}
+                                {isEditing ? (
+                                    <Input value={editData.phone} onChange={(e) => handleChange("phone", e.target.value)} />
+                                ) : (
+                                    account.phone
+                                )}
                             </p>
                         </div>
+
                         <div className="space-y-2">
                             <h3 className="font-semibold text-gray-800 flex items-center gap-2">
-                                <DollarSign className="h-5 w-5 text-blue-600" />{" "}
-                                Account Information
+                                <DollarSign className="h-5 w-5 text-blue-600" /> Account Information
                             </h3>
+
                             <p className="text-sm text-gray-600">
-                                <span className="font-medium">
-                                    Account Type:
-                                </span>{" "}
-                                {account.accType}
+                                <span className="font-medium">Account Type:</span>{" "}
+                                {isEditing ? (
+                                    <Input value={editData.accType} onChange={(e) => handleChange("accType", e.target.value)} />
+                                ) : (
+                                    account.accType
+                                )}
                             </p>
+
                             <p className="text-sm text-gray-600">
-                                <span className="font-medium">
-                                    Current Balance:
-                                </span>{" "}
-                                <span className="font-bold text-lg text-green-600">
-                                    $
-                                    {account.balance.toLocaleString(undefined, {
-                                        minimumFractionDigits: 2,
-                                    })}
-                                </span>
+                                <span className="font-medium">Current Balance:</span>{" "}
+                                {isEditing ? (
+                                    <Input
+                                        type="number"
+                                        value={editData.balance}
+                                        onChange={(e) => handleChange("balance", e.target.value)}
+                                    />
+                                ) : (
+                                   `$${account.balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
+                                )}
                             </p>
+
                             <p className="text-sm text-gray-600 flex items-center gap-2">
-                                <span className="font-medium">
-                                    Account Status:
-                                </span>{" "}
-                                <Badge
-                                    variant={getStatusBadgeVariant(
-                                        account.status,
-                                    )}
-                                >
+                                <span className="font-medium">Account Status:</span>{" "}
+                                <Badge variant={getStatusBadgeVariant(account.status)}>
                                     {account.status}
                                 </Badge>
                             </p>
-                            <Button
-                                className="mt-4 bg-blue-600 hover:bg-blue-700 text-white"
-                                onClick={handleUpdateStatusClick}
-                                disabled={updatingStatus}
-                            >
-                                {updatingStatus ? (
-                                    <>
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Updating...
-                                    </>
-                                ) : (
-                                    <>
-                                        <CreditCard className="mr-2 h-4 w-4" />
-                                        Update Account Status
-                                    </>
-                                )}
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
 
-            {/* Update Account Status Dialog */}
-            {account && (
-                <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                    <DialogContent className="sm:max-w-[425px] border-blue-200">
-                        <DialogHeader>
-                            <DialogTitle className="text-gray-900">
-                                Update Account Status
-                            </DialogTitle>
-                            <DialogDescription>
-                                Change the status for Account ID:{" "}
-                                <span className="font-medium">
-                                    {account.accId}
-                                </span>{" "}
-                                ({account.accName})
-                            </DialogDescription>
-                        </DialogHeader>
-                        <Form {...updateStatusForm}>
-                            <form
-                                onSubmit={updateStatusForm.handleSubmit(
-                                    onUpdateStatusSubmit,
-                                )}
-                                className="space-y-4 py-4"
-                            >
-                                <div className="space-y-2">
-                                    <Label htmlFor="current-status">
-                                        Current Status
-                                    </Label>{" "}
-                                    {/* Changed from FormLabel to Label */}
-                                    <Input
-                                        id="current-status"
-                                        value={account.status}
-                                        disabled
-                                        className="bg-gray-100"
-                                    />
-                                </div>
-                                <FormField
-                                    control={updateStatusForm.control}
-                                    name="status"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>New Status</FormLabel>
-                                            <Select
-                                                onValueChange={field.onChange}
-                                                value={field.value}
-                                            >
-                                                <FormControl>
-                                                    <SelectTrigger className="w-full">
-                                                        <SelectValue placeholder="Select new status" />
-                                                    </SelectTrigger>
-                                                </FormControl>
-                                                <SelectContent>
-                                                    <SelectItem value="ACTIVE">
-                                                        Active
-                                                    </SelectItem>
-                                                    <SelectItem value="INACTIVE">
-                                                        Inactive
-                                                    </SelectItem>
-                                                    <SelectItem value="SUSPENDED">
-                                                        Suspended
-                                                    </SelectItem>
-                                                    <SelectItem value="CLOSED">
-                                                        Closed
-                                                    </SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <DialogFooter>
+                            {!isEditing && (
+                                <div className="flex items-center gap-3 mt-4">
+                                    <Select value={selectedStatus} onValueChange={(v) => setSelectedStatus(v)}>
+                                        <SelectTrigger className="w-[180px]">
+                                            <SelectValue placeholder="Select Status" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="ACTIVE">Active</SelectItem>
+                                            <SelectItem value="INACTIVE">Inactive</SelectItem>
+                                            <SelectItem value="SUSPENDED">Suspended</SelectItem>
+                                            <SelectItem value="CLOSED">Closed</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+
                                     <Button
-                                        variant="outline"
-                                        onClick={() => setDialogOpen(false)}
+                                        onClick={() => updateAccountStatus(selectedStatus)}
                                         disabled={updatingStatus}
-                                    >
-                                        Cancel
-                                    </Button>
-                                    <Button
-                                        type="submit"
                                         className="bg-blue-600 hover:bg-blue-700 text-white"
-                                        disabled={updatingStatus}
                                     >
                                         {updatingStatus ? (
                                             <>
@@ -470,14 +371,17 @@ export default function ManageAccountContent() {
                                                 Updating...
                                             </>
                                         ) : (
-                                            "Save Changes"
+                                            <>
+                                                <CreditCard className="mr-2 h-4 w-4" />
+                                                Update Status
+                                            </>
                                         )}
                                     </Button>
-                                </DialogFooter>
-                            </form>
-                        </Form>
-                    </DialogContent>
-                </Dialog>
+                                </div>
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
             )}
         </div>
     );

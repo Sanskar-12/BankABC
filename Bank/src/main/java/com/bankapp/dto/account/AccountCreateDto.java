@@ -23,4 +23,10 @@ public class AccountCreateDto {
     @NotNull(message = "Initial deposit cannot be null")
     @DecimalMin(value = "0.0", message = "Initial deposit must not be negative")
     private BigDecimal initialDeposit;
+
+    @Email(message = "Invalid email format")
+    private String email;
+
+    @Pattern(regexp = "^[0-9]{10}$", message = "Phone number must be 10 digits")
+    private String phone;
 }

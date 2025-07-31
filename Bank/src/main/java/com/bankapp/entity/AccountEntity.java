@@ -15,7 +15,8 @@ public class AccountEntity {
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "account_seq")
     @SequenceGenerator(name = "account_seq", sequenceName = "ACCOUNT_ID_SEQ", allocationSize = 1)
     private Long accId;
-
+private String email;
+private  String phone;
     private String accName;
     private String accType; // SAVINGS, CHECKING
     private BigDecimal balance;

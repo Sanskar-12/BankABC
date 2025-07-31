@@ -13,6 +13,8 @@ public class AccountDto {
     private BigDecimal balance;
     private String status;
     private Long transId;
+    private String email;
+    private String phone;
 
     private String accountHolderName; // from Customer
     private String branchName;

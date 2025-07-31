@@ -99,6 +99,7 @@ const AppRoutes = () => {
         console.error("Invalid user_data in cookie", error);
     }
 
+
     const role = user?.roles?.[0];
 
     return (

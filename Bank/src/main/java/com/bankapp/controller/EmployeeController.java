@@ -1,6 +1,7 @@
 package com.bankapp.controller;
 import com.bankapp.dto.account.AccountDto;
 import com.bankapp.dto.account.AccountUpdateDto;
+import com.bankapp.dto.employee.EmployeeDto;
 import com.bankapp.dto.loan.LoanDto;
 import com.bankapp.dto.loan.LoanStatusUpdateDto;
 import com.bankapp.dto.transaction.TransactionDto;
@@ -42,6 +43,16 @@ public class EmployeeController {
     public ResponseEntity<LoanDto> updateLoanStatus(@PathVariable Integer id, @Valid @RequestBody LoanStatusUpdateDto statusUpdateDto) {
         LoanDto updatedLoan = employeeService.updateLoanStatus(id, statusUpdateDto);
         return ResponseEntity.ok(updatedLoan);
+    }
+
+    @GetMapping("/accounts/{id}")
+    public ResponseEntity<AccountDto> getAccountDetails(@PathVariable Long id){
+        AccountDto account = employeeService.getAccountDetails(id);
+        return ResponseEntity.ok(account);
+    }
+    @GetMapping("/employees/{id}")
+    public ResponseEntity<EmployeeDto> getEmployeeById(@PathVariable Long id){
+        return ResponseEntity.ok(employeeService.getEmployeeById(id));
     }
 
     @GetMapping("/accounts/{accountId}/transactions")

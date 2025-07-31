@@ -1,14 +1,17 @@
 package com.bankapp.service.impl;
 import com.bankapp.dto.account.AccountDto;
 import com.bankapp.dto.account.AccountUpdateDto;
+import com.bankapp.dto.employee.EmployeeDto;
 import com.bankapp.dto.loan.LoanDto;
 import com.bankapp.dto.loan.LoanStatusUpdateDto;
 import com.bankapp.dto.transaction.TransactionDto;
 import com.bankapp.entity.AccountEntity;
+import com.bankapp.entity.EmployeeEntity;
 import com.bankapp.entity.LoanEntity;
 import com.bankapp.entity.TransactionEntity;
 import com.bankapp.exception.ResourceNotFoundException;
 import com.bankapp.repository.AccountRepository;
+import com.bankapp.repository.EmployeeRepository;
 import com.bankapp.repository.LoanRepository;
 import com.bankapp.repository.TransactionRepository;
 import com.bankapp.service.EmployeeService;
@@ -21,6 +24,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 @Service
 public class EmployeeServiceImpl implements EmployeeService {
+    @Autowired private EmployeeRepository employeeRepository;
     @Autowired private AccountRepository accountRepository;
     @Autowired private LoanRepository loanRepository;
     @Autowired private TransactionRepository transactionRepository;
@@ -30,10 +34,31 @@ public class EmployeeServiceImpl implements EmployeeService {
     public AccountDto updateAccountDetails(Long accountId, AccountUpdateDto accountUpdateDto) {
         AccountEntity account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
-        account.setAccName(accountUpdateDto.getAccName());
+
+        // Update fields only if provided
+        if (accountUpdateDto.getAccName() != null) {
+            account.setAccName(accountUpdateDto.getAccName());
+        }
+        if (accountUpdateDto.getAccType() != null) {
+            account.setAccType(accountUpdateDto.getAccType());
+        }
+        if (accountUpdateDto.getBalance() != null) {
+            account.setBalance(accountUpdateDto.getBalance());
+        }
+        if (accountUpdateDto.getStatus() != null) {
+            account.setStatus(accountUpdateDto.getStatus());
+        }
+        if (accountUpdateDto.getEmail() != null) {
+            account.setEmail(accountUpdateDto.getEmail());
+        }
+        if (accountUpdateDto.getPhone() != null) {
+            account.setPhone(accountUpdateDto.getPhone());
+        }
+
         AccountEntity updatedAccount = accountRepository.save(account);
         return convertToAccountDto(updatedAccount);
     }
+
 
     @Override
     @Transactional
@@ -79,6 +104,31 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     @Override
+    public AccountDto getAccountDetails(Long id) {
+        AccountEntity account = accountRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found with id: " + id));
+        return convertToAccountDto(account);
+    }
+
+    @Override
+    public EmployeeDto getEmployeeById(Long id) {
+        EmployeeEntity employee = employeeRepository.findById(id.intValue())
+                .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + id));
+
+        EmployeeDto dto = new EmployeeDto();
+        BeanUtils.copyProperties(employee, dto);
+
+        // Ensure branchId is set if branch is not null
+        if (employee.getBranch() != null) {
+            dto.setBranchId(employee.getBranch().getBranchId());
+        }
+
+        return dto;
+    }
+
+
+
+    @Override
     public List<TransactionDto> getTransactionsForAccount(Long accountId) {
         if (!accountRepository.existsById(accountId)) {
             throw new ResourceNotFoundException("Account not found with id: " + accountId);
@@ -106,3 +156,23 @@ public class EmployeeServiceImpl implements EmployeeService {
         return dto;
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
